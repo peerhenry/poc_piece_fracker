@@ -72,37 +72,30 @@
     pieces.push(rec);
   }
 
+  function appendExistingPiece(rec)
+  {
+    if(rec.rank == 0) appendFade(rec);
+    else if(!rec.isFracked) appendFade(rec);
+    else if(outsideUnfracRange(rec))
+    {
+      unFracPiece(rec);
+      appendNew(rec);
+    }
+    else{
+      appendExistingPiece(rec[JSON.stringify({i: 0, j: 0})]);
+      appendExistingPiece(rec[JSON.stringify({i: 1, j: 0})]);
+      appendExistingPiece(rec[JSON.stringify({i: 0, j: 1})]);
+      appendExistingPiece(rec[JSON.stringify({i: 1, j: 1})]);
+    }
+  }
+
   function appendPiece(rec){
     if(pieceExists(rec))
     {
       rec = retrievePiece(rec);
-      if(rec.isFracked)
-      {
-        if(outsideUnfracRange(rec))
-        {
-          unFracPiece(rec);
-          appendNew(rec);
-        }
-        else{
-          appendFade(rec[JSON.stringify({i: 0, j: 0})]);
-          appendFade(rec[JSON.stringify({i: 1, j: 0})]);
-          appendFade(rec[JSON.stringify({i: 0, j: 1})]);
-          appendFade(rec[JSON.stringify({i: 1, j: 1})]);
-        }
-      }
-      else appendFade(rec);
+      appendExistingPiece(rec);
     }
     else appendNew(rec);
-  }
-
-  function getFracRange(rank){
-    if(rank > 2) return fracRange2;
-    return fracRange;
-  }
-
-  function getUnfracRange(rank){
-    if(rank > 2) return unfracRange2;
-    return unfracRange;
   }
 
   function getSqDist(x1, x2){
@@ -117,6 +110,16 @@
     if( point.y < rec.y ) sqd += getSqDist(point.y, rec.y);
     if( point.y > rec.y + rec.h ) sqd += getSqDist(point.y, rec.y + rec.h);
     return sqd;
+  }
+
+  function getFracRange(rank){
+    if(rank > 2) return fracRange2;
+    return fracRange;
+  }
+
+  function getUnfracRange(rank){
+    if(rank > 2) return unfracRange2;
+    return unfracRange;
   }
 
   function outsideUnfracRange(rec){
