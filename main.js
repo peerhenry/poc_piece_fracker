@@ -13,11 +13,25 @@
   var y = 200;
   var dx = 0;
   var dy = 0;
-  var fracRange = 50;
+  var fracRange = 50; // frac to rank 0
+  var fracRange2 = 150; // frac to rank 2
   var maxRank = 4;
 
   var pieces = [];
   var recSize = 16;
+
+  function getFracRange(rank)
+  {
+    if(rank > 2) return fracRange2;
+    return fracRange;
+  }
+
+  function newPiece(rank)
+  {
+    return {
+      rank: rank,
+    }
+  }
 
   function getSqDist(x1, x2)
   {
@@ -35,17 +49,17 @@
     return sqd;
   }
 
-  // intersection
-  function intersect(rec, circle)
+  function withinFracRange(rec)
   {
-    var dss = sqDistRec({x: circle.x, y: circle.y}, rec);
-    if(dss < circle.r * circle.r) return true;
+    var dss = sqDistRec({x: x, y: y}, rec);
+    var r = getFracRange(rec.rank);
+    if(dss < r * r) return true;
     return false;
   }
 
-  function frack(rec, circle)
+  function frack(rec)
   {
-    if(rec.rank <= 0) pieces.push(rec);
+    if(rec.rank == 0) pieces.push(rec);
     else{
       var smallerW = rec.w/2;
       var smallerH = rec.h/2;
@@ -53,7 +67,7 @@
         for(var sj = 0; sj < 2; sj++)
         {
           var smallerRec = { x: rec.x + si*smallerW, y: rec.y + sj*smallerH, w: smallerW, h: smallerH, rank: (rec.rank -1) };
-          if( intersect(smallerRec, circle) ) frack(smallerRec, circle);
+          if( withinFracRange(smallerRec) ) frack(smallerRec);
           else pieces.push(smallerRec);
         }
     }
@@ -62,15 +76,14 @@
   function updatePieces()
   {
     pieces = [];
-    var circle = {x: x, y: y, r: fracRange};
     var maxRankSize = recSize*Math.pow(2, maxRank);
     for(var bi = 0; bi < w/maxRankSize; bi++){
       for(var bj = 0; bj < h/maxRankSize; bj++){
 
         var maxRec = {x: maxRankSize*bi, y: maxRankSize*bj, w: maxRankSize, h: maxRankSize, rank: maxRank};
-        if( intersect(maxRec, circle) )
+        if( withinFracRange(maxRec) )
         {
-          frack(maxRec, circle);
+          frack(maxRec);
         }
         else
         {
@@ -107,6 +120,10 @@
     // draw high detail range
     ctx.beginPath();
     ctx.arc(x,y,fracRange,0,2*Math.PI);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x,y,fracRange2,0,2*Math.PI);
     ctx.stroke();
   }
 
