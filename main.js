@@ -14,7 +14,9 @@
   var dx = 0;
   var dy = 0;
   var fracRange = 50; // frac to rank 0
+  var unfracRange = 80;
   var fracRange2 = 150; // frac to rank 2
+  var unfracRange2 = 240;
   var maxRank = 4;
 
   var pieces = [];
@@ -49,8 +51,7 @@
     return rec;
   }
 
-  function unFracPiece(rec)
-  {
+  function unFracPiece(rec){
     rec[JSON.stringify({i: 0, j: 0})] = undefined;
     rec[JSON.stringify({i: 1, j: 0})] = undefined;
     rec[JSON.stringify({i: 0, j: 1})] = undefined;
@@ -58,41 +59,58 @@
     rec.isFracked = false;
   }
 
-  function appendPiece(rec)
+  function appendFade(rec){
+    rec.fadeVal -= 0.06;
+    pieces.push(rec);
+  }
+
+  function appendNew(rec)
   {
+    rec.isFracked = false;
+    rec.fadeVal = 1;
+    registerPiece(rec);
+    pieces.push(rec);
+  }
+
+  function appendPiece(rec){
     if(pieceExists(rec))
     {
       rec = retrievePiece(rec);
       if(rec.isFracked)
       {
-        rec.fadeVal = 1;
-        unFracPiece(rec);
+        if(outsideUnfracRange(rec))
+        {
+          unFracPiece(rec);
+          appendNew(rec);
+        }
+        else{
+          appendFade(rec[JSON.stringify({i: 0, j: 0})]);
+          appendFade(rec[JSON.stringify({i: 1, j: 0})]);
+          appendFade(rec[JSON.stringify({i: 0, j: 1})]);
+          appendFade(rec[JSON.stringify({i: 1, j: 1})]);
+        }
       }
-      else rec.fadeVal -= 0.04;
+      else appendFade(rec);
     }
-    else
-    {
-      rec.isFracked = false;
-      rec.fadeVal = 1;
-      registerPiece(rec);
-    }
-    pieces.push(rec);
+    else appendNew(rec);
   }
 
-  function getFracRange(rank)
-  {
+  function getFracRange(rank){
     if(rank > 2) return fracRange2;
     return fracRange;
   }
 
-  function getSqDist(x1, x2)
-  {
+  function getUnfracRange(rank){
+    if(rank > 2) return unfracRange2;
+    return unfracRange;
+  }
+
+  function getSqDist(x1, x2){
     var temp = x1 - x2;
     return temp*temp;
   }
 
-  function sqDistRec(point, rec)
-  {
+  function sqDistRec(point, rec){
     var sqd = 0;
     if( point.x < rec.x ) sqd += getSqDist(point.x, rec.x);
     if( point.x > rec.x + rec.w ) sqd += getSqDist(point.x, rec.x + rec.w);
@@ -101,16 +119,21 @@
     return sqd;
   }
 
-  function withinFracRange(rec)
-  {
+  function outsideUnfracRange(rec){
+    var dss = sqDistRec({x: x, y: y}, rec);
+    var r = getUnfracRange(rec.rank);
+    if(dss > r * r) return true;
+    return false;
+  }
+
+  function withinFracRange(rec){
     var dss = sqDistRec({x: x, y: y}, rec);
     var r = getFracRange(rec.rank);
     if(dss < r * r) return true;
     return false;
   }
 
-  function frack(rec)
-  {
+  function frack(rec){
     if(rec.rank == 0) appendPiece(rec);
     else if( !withinFracRange(rec) ) appendPiece(rec);
     else{
@@ -125,8 +148,7 @@
     }
   }
   
-  function updatePieces()
-  {
+  function updatePieces(){
     pieces = [];
     var maxRankSize = recSize*Math.pow(2, maxRank);
     for(var bi = 0; bi < w/maxRankSize; bi++){
@@ -138,14 +160,12 @@
     }
   }
 
-  function clear()
-  {
+  function clear(){
     ctx.fillStyle = "black";
     ctx.fillRect(0,0,w,h);
   }
 
-  function drawPieces()
-  {
+  function drawPieces(){
     ctx.strokeStyle = "red";
     //ctx.lineWidth = 1;
     for(var n = 0; n < pieces.length; n++){
@@ -156,8 +176,7 @@
     }
   }
 
-  function drawPlayer()
-  {
+  function drawPlayer(){
     x += dx*speed;
     y += dy*speed;
     ctx.fillStyle = "green";
@@ -172,18 +191,28 @@
     ctx.beginPath();
     ctx.arc(x,y,fracRange2,0,2*Math.PI);
     ctx.stroke();
+
+    ctx.setLineDash([5, 7]);/*dashes are 5px and spaces are 7px*/
+
+    ctx.beginPath();
+    ctx.arc(x,y,unfracRange,0,2*Math.PI);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x,y,unfracRange2,0,2*Math.PI);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
   }
 
-  function gameLoop()
-  {
+  function gameLoop(){
     updatePieces();
     clear();
     drawPieces();
     drawPlayer();
   }
 
-  function keyPush(ev)
-  {
+  function keyPush(ev){
     switch(ev.keyCode)
     {
       case 37:
@@ -201,8 +230,7 @@
     }
   }
 
-  function keyRelease(ev)
-  {
+  function keyRelease(ev){
     switch(ev.keyCode)
     {
       case 37:
