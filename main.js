@@ -52,12 +52,20 @@
         var rec = {x: px, y: py, w: recSize, h: recSize};
         if( intersect(rec, circle) )
         {
-          pieces.push({
-            x: px,
-            y: py,
-            w: recSize,
-            h: recSize,
-          });
+          pieces.push(rec);
+        }
+        else{
+          // check if it can be absorbed in higher rank...
+          var fi = Math.floor(i/2);
+          var fj = Math.floor(j/2);
+          var largerRec = {x: fi*recSize*2, y: fj*recSize*2, w: 2*recSize, h: 2*recSize};
+          if( intersect(largerRec, circle) )
+          {
+            pieces.push(rec);
+          } 
+          else{
+            pieces.push(largerRec);
+          }
         }
       }
     }
