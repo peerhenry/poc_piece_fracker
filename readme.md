@@ -1,6 +1,7 @@
 # Piece Fracker POC
-This is a proof of concept for piece fracking. In this example the pieces are represented by red squares. Fracking refers to breaking a piece down into smaller pieces.
 ![demo](https://github.com/peerhenry/poc_piece_fracker/blob/master/demo.png)
+
+This is a proof of concept for piece fracking. In this example the pieces are represented by red squares. Fracking refers to breaking a piece down into smaller pieces.
 
 ## Instruction
 
