@@ -1,7 +1,7 @@
 (function(){
 
-  var w = 1024;
-  var h = 512;
+  var w = 1536;
+  var h = 768;
   var canvas = document.getElementById("canvas");
   var ctx = canvas.getContext("2d");
   document.addEventListener("keydown", keyPush);
@@ -14,58 +14,67 @@
   var dx = 0;
   var dy = 0;
   var fracRange = 50;
-  var maxRank = 2;
+  var maxRank = 4;
 
   var pieces = [];
-  var recSize = 32;
+  var recSize = 16;
+
+  function getSqDist(x1, x2)
+  {
+    var temp = x1 - x2;
+    return temp*temp;
+  }
+
+  function sqDistRec(point, rec)
+  {
+    var sqd = 0;
+    if( point.x < rec.x ) sqd += getSqDist(point.x, rec.x);
+    if( point.x > rec.x + rec.w ) sqd += getSqDist(point.x, rec.x + rec.w);
+    if( point.y < rec.y ) sqd += getSqDist(point.y, rec.y);
+    if( point.y > rec.y + rec.h ) sqd += getSqDist(point.y, rec.y + rec.h);
+    return sqd;
+  }
 
   // intersection
   function intersect(rec, circle)
   {
-    var points = [
-      {x: rec.x, y: rec.y},
-      {x: rec.x+rec.w, y: rec.y},
-      {x: rec.x, y: rec.y+rec.h},
-      {x: rec.x+rec.w, y: rec.y+rec.h},
-    ];
-    for(var n = 0; n<4; n++)
-    {
-      var nx = points[n].x;
-      var ny = points[n].y;
-      var dcx = nx - circle.x;
-      var dcy = ny - circle.y;
-      var dss = dcx*dcx + dcy*dcy;
-      if(dss < circle.r * circle.r) return true;
-    }
+    var dss = sqDistRec({x: circle.x, y: circle.y}, rec);
+    if(dss < circle.r * circle.r) return true;
     return false;
+  }
+
+  function frack(rec, circle)
+  {
+    if(rec.rank <= 0) pieces.push(rec);
+    else{
+      var smallerW = rec.w/2;
+      var smallerH = rec.h/2;
+      for(var si = 0; si < 2; si++)
+        for(var sj = 0; sj < 2; sj++)
+        {
+          var smallerRec = { x: rec.x + si*smallerW, y: rec.y + sj*smallerH, w: smallerW, h: smallerH, rank: (rec.rank -1) };
+          if( intersect(smallerRec, circle) ) frack(smallerRec, circle);
+          else pieces.push(smallerRec);
+        }
+    }
   }
   
   function updatePieces()
   {
     pieces = [];
     var circle = {x: x, y: y, r: fracRange};
-    for(var i = 0; i < w/recSize; i++){
-      for(var j = 0; j < h/recSize; j++){
-        // intersection test with player circle
-        var px = recSize*i;
-        var py = recSize*j;
-        var rec = {x: px, y: py, w: recSize, h: recSize};
-        if( intersect(rec, circle) )
+    var maxRankSize = recSize*Math.pow(2, maxRank);
+    for(var bi = 0; bi < w/maxRankSize; bi++){
+      for(var bj = 0; bj < h/maxRankSize; bj++){
+
+        var maxRec = {x: maxRankSize*bi, y: maxRankSize*bj, w: maxRankSize, h: maxRankSize, rank: maxRank};
+        if( intersect(maxRec, circle) )
         {
-          pieces.push(rec);
+          frack(maxRec, circle);
         }
-        else{
-          // check if it can be absorbed in higher rank...
-          var fi = Math.floor(i/2);
-          var fj = Math.floor(j/2);
-          var largerRec = {x: fi*recSize*2, y: fj*recSize*2, w: 2*recSize, h: 2*recSize};
-          if( intersect(largerRec, circle) )
-          {
-            pieces.push(rec);
-          } 
-          else{
-            pieces.push(largerRec);
-          }
+        else
+        {
+          pieces.push(maxRec);
         }
       }
     }
@@ -74,7 +83,7 @@
   function clear()
   {
     ctx.fillStyle = "black";
-    ctx.fillRect(0,0,1024,1024);
+    ctx.fillRect(0,0,w,h);
   }
 
   function drawPieces()
